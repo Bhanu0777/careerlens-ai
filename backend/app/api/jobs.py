@@ -7,6 +7,7 @@ NO FALLBACK MOCK DATA - returns empty list if no real data exists.
 import logging
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional, Dict, Any
@@ -207,14 +208,55 @@ async def get_job_match_detail(
     matched_count = len(job.matchedSkills or [])
     skill_pct = round((matched_count / max(total_possible, 1)) * 35)
     
+    # --- experience_match (max 20) ---
+    exp_str = r.get('experience_required') or ''
+    exp_m = re.search(r'\d+', exp_str)
+    if not exp_m or int(exp_m.group()) == 0:
+        experience_match = 20  # entry-level / no barrier
+    else:
+        years = int(exp_m.group())
+        experience_match = max(8, min(20, round(20 - (years * 2))))
+
+    # --- project_match (max 15) ---
+    if not reqs:
+        project_match = 15  # no project requirements specified
+    else:
+        matched_ratio = len(job.matchedSkills) / max(len(reqs), 1)
+        project_match = max(6, round(matched_ratio * 15))
+
+    # --- seniority_match (max 10) ---
+    title_lower = r.get('title', '').lower()
+    if any(kw in title_lower for kw in ['intern', 'trainee', 'fresher', 'junior', 'jr']):
+        seniority_match = 10
+    elif any(kw in title_lower for kw in ['senior', 'sr', 'lead', 'principal', 'staff', 'architect']):
+        seniority_match = 7
+    else:
+        seniority_match = 9  # mid-level default
+
+    # --- location_match (max 5) ---
+    work_mode = (r.get('work_mode') or '').lower()
+    if 'remote' in work_mode:
+        location_match = 5
+    elif 'hybrid' in work_mode:
+        location_match = 4
+    else:
+        location_match = 3
+
+    # --- domain_match (max 5) ---
+    combined = (r.get('title', '') + ' ' + (r.get('description') or '')).lower()
+    if any(skill.lower() in combined for skill in (job.matchedSkills or [])):
+        domain_match = 5
+    else:
+        domain_match = 3
+
     detailed_breakdown = FitScoreBreakdown(
         skill_match=skill_pct,
-        experience_match=16,  # Placeholder - would need candidate experience data
-        project_match=12,
+        experience_match=experience_match,
+        project_match=project_match,
         education_match=9,
-        seniority_match=9,
-        location_match=5,
-        domain_match=4,
+        seniority_match=seniority_match,
+        location_match=location_match,
+        domain_match=domain_match,
     )
 
     breakdown = {
