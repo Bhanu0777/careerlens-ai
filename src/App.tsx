@@ -1,8 +1,9 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { Layout } from './components/layout/Layout'
 import { PageSkeleton } from './components/ui/Skeleton'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // ── Core pages only ────────────────────────────────────────────────────────
 const Landing            = lazy(() => import('./pages/Landing'))
@@ -13,6 +14,7 @@ const MarketIntelligence = lazy(() => import('./pages/MarketIntelligence'))
 const SkillGap           = lazy(() => import('./pages/SkillGap'))
 const Jobs               = lazy(() => import('./pages/Jobs'))
 const JobMatch           = lazy(() => import('./pages/JobMatch'))
+const NotFound           = lazy(() => import('./pages/NotFound'))
 
 function App() {
   return (
@@ -31,26 +33,28 @@ function App() {
         richColors
       />
 
-      <Suspense fallback={<PageSkeleton />}>
-        <Routes>
-          {/* Public */}
-          <Route path="/"           element={<Landing />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+      <ErrorBoundary>
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes>
+            {/* Public */}
+            <Route path="/"           element={<Landing />} />
+            <Route path="/onboarding" element={<Onboarding />} />
 
-          {/* App — inside shared Layout */}
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/resume"    element={<ResumeIntelligence />} />
-            <Route path="/market"    element={<MarketIntelligence />} />
-            <Route path="/skill-gap" element={<SkillGap />} />
-            <Route path="/jobs"      element={<Jobs />} />
-            <Route path="/jobs/:id"  element={<JobMatch />} />
-          </Route>
+            {/* App — inside shared Layout */}
+            <Route element={<Layout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/resume"    element={<ResumeIntelligence />} />
+              <Route path="/market"    element={<MarketIntelligence />} />
+              <Route path="/skill-gap" element={<SkillGap />} />
+              <Route path="/jobs"      element={<Jobs />} />
+              <Route path="/jobs/:id"  element={<JobMatch />} />
+            </Route>
 
-          {/* Redirect old paths to dashboard */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Suspense>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
