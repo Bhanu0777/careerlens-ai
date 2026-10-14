@@ -50,7 +50,16 @@ def _row_to_job(r: dict) -> JobItem:
     else:
         posted_label = "Date not specified"
 
-    reqs: list = r.get("requirements") or []
+    reqs_raw = r.get("requirements") or []
+    if isinstance(reqs_raw, str):
+        try:
+            reqs = json.loads(reqs_raw)
+        except Exception:
+            reqs = []
+    elif isinstance(reqs_raw, list):
+        reqs = reqs_raw
+    else:
+        reqs = []
     verification_status = r.get("verification_status") or "needs_verification"
     
     return JobItem(
@@ -117,7 +126,16 @@ async def list_jobs(
         result = []
         for r in rows:
             job = _row_to_job(r)
-            reqs: list = r.get("requirements") or []
+            reqs_raw2 = r.get("requirements") or []
+            if isinstance(reqs_raw2, str):
+                try:
+                    reqs = json.loads(reqs_raw2)
+                except Exception:
+                    reqs = []
+            elif isinstance(reqs_raw2, list):
+                reqs = reqs_raw2
+            else:
+                reqs = []
 
             if skills_list and reqs:
                 fit = calculate_fit_score(
@@ -177,7 +195,16 @@ async def get_job_match_detail(
         
         r = resp.data[0]
         job = _row_to_job(r)
-        reqs: list = r.get("requirements") or []
+        reqs_raw3 = r.get("requirements") or []
+        if isinstance(reqs_raw3, str):
+            try:
+                reqs = json.loads(reqs_raw3)
+            except Exception:
+                reqs = []
+        elif isinstance(reqs_raw3, list):
+            reqs = reqs_raw3
+        else:
+            reqs = []
 
     except HTTPException:
         raise
