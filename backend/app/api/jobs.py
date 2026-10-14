@@ -16,6 +16,7 @@ from app.models.schemas import JobItem, MatchDetailResponse, FitScoreBreakdown, 
 from app.core.database import get_supabase
 from app.services.career_intelligence import calculate_fit_score
 from app.services.job_sources import get_default_sources, COMPANY_CAREER_SOURCES, AI_ROLE_QUERIES
+from app.services.live_job_fetcher import fetch_all_live_jobs, save_live_jobs_to_db
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/jobs", tags=["Jobs & Fit Match"])
@@ -413,4 +414,49 @@ async def run_job_collection(request: CollectRequest):
         "total_new": sum(r.get("jobs_new", 0) for r in results),
         "total_updated": sum(r.get("jobs_updated", 0) for r in results),
         "total_failed": sum(r.get("jobs_failed", 0) for r in results),
+    }
+
+
+class FetchLiveRequest(BaseModel):
+    search: str = ""
+
+
+@router.post("/fetch-live")
+async def fetch_live_jobs(request: FetchLiveRequest = FetchLiveRequest()):
+    """
+    Fetch real live job postings from Remotive, RemoteOK, and Jobicy free public APIs.
+    Saves them to the Supabase jobs table and returns a summary.
+    """
+    from datetime import datetime, timezone
+    db = get_supabase()
+    result = await fetch_all_live_jobs(search=request.search)
+    jobs = result.get("jobs", [])
+    counts = await save_live_jobs_to_db(db, jobs)
+    sources = result.get("sources", {})
+    return {
+        "status": "ok",
+        "total_fetched": result.get("total", 0),
+        "new": counts.get("new", 0),
+        "updated": counts.get("updated", 0),
+        "failed": counts.get("failed", 0),
+        "sources": sources,
+        "fetched_at": result.get("fetched_at", datetime.now(timezone.utc).isoformat()),
+    }
+
+
+@router.get("/fetch-live/preview")
+async def preview_live_jobs(search: str = Query(default="")):
+    """
+    Preview live job postings from all three public APIs without saving to DB.
+    Returns the first 20 jobs for testing purposes.
+    """
+    result = await fetch_all_live_jobs(search=search)
+    jobs = result.get("jobs", [])
+    return {
+        "status": "preview",
+        "total_available": result.get("total", 0),
+        "preview": jobs[:20],
+        "sources": result.get("sources", {}),
+        "fetched_at": result.get("fetched_at"),
+        "note": "Preview only — nothing saved to database",
     }
