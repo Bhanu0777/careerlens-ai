@@ -1,4 +1,14 @@
+import { supabase } from './supabase'
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session?.access_token) {
+    return { 'Authorization': `Bearer ${session.access_token}` }
+  }
+  return {}
+}
 
 export type CareerAnalysis = {
   fit: {
@@ -59,7 +69,7 @@ export async function analyzeCareer(payload: {
 }) {
   const response = await fetch(`${API_BASE}/career/analyze`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...await getAuthHeaders() },
     body: JSON.stringify({
       target_role: payload.targetRole,
       candidate_skills: payload.candidateSkills,
@@ -157,8 +167,10 @@ export async function getJobMatch(jobId: string, candidateSkills: string[]) {
 export async function uploadResume(file: File) {
   const formData = new FormData()
   formData.append('file', file)
+  const authHeaders = await getAuthHeaders()
   const res = await fetch(`${API_BASE}/resume/upload`, {
     method: 'POST',
+    headers: authHeaders,
     body: formData,
   })
   if (!res.ok) throw new Error('Failed to upload and analyze resume')

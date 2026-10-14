@@ -193,6 +193,13 @@ const defaultAnalytics: AnalyticsState = {
 // ─── Store interface ──────────────────────────────────────────────────────────
 
 interface AppState {
+  // Auth
+  authUser: { id: string; email: string } | null
+  authLoading: boolean
+  setAuthUser: (user: { id: string; email: string } | null) => void
+  setAuthLoading: (v: boolean) => void
+  signOut: () => Promise<void>
+
   // Core
   hasResume: boolean
   profile: Profile | null
@@ -265,6 +272,8 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      authUser: null,
+      authLoading: true,
       hasResume: false,
       profile: null,
       skills: [],
@@ -281,6 +290,23 @@ export const useAppStore = create<AppState>()(
       sidebarCollapsed: false,
       onboardingComplete: false,
       savedJobs: [],
+
+      // ── Auth ──────────────────────────────────────────────────────────────
+      setAuthUser: (user) => set({ authUser: user }),
+      setAuthLoading: (v) => set({ authLoading: v }),
+      signOut: async () => {
+        const { supabase } = await import('../lib/supabase')
+        await supabase.auth.signOut()
+        set({
+          authUser: null,
+          profile: null,
+          skills: [],
+          gaps: [],
+          targetRoles: [],
+          resumeAnalysis: null,
+          hasResume: false,
+        })
+      },
 
       // ── Core ──────────────────────────────────────────────────────────────
       setHasResume: (v, analysis) => {

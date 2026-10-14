@@ -1,13 +1,17 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { Layout } from './components/layout/Layout'
 import { PageSkeleton } from './components/ui/Skeleton'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { supabase } from './lib/supabase'
+import { useAppStore } from './stores/appStore'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 // ── Core pages only ────────────────────────────────────────────────────────
 const Landing            = lazy(() => import('./pages/Landing'))
 const Onboarding         = lazy(() => import('./pages/Onboarding'))
+const Auth               = lazy(() => import('./pages/Auth'))
 const Dashboard          = lazy(() => import('./pages/Dashboard'))
 const ResumeIntelligence = lazy(() => import('./pages/ResumeIntelligence'))
 const MarketIntelligence = lazy(() => import('./pages/MarketIntelligence'))
@@ -17,6 +21,31 @@ const JobMatch           = lazy(() => import('./pages/JobMatch'))
 const NotFound           = lazy(() => import('./pages/NotFound'))
 
 function App() {
+  const { setAuthUser, setAuthLoading } = useAppStore()
+
+  useEffect(() => {
+    // Restore existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setAuthUser({ id: session.user.id, email: session.user.email! })
+      } else {
+        setAuthUser(null)
+      }
+      setAuthLoading(false)
+    })
+
+    // Listen to future auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setAuthUser({ id: session.user.id, email: session.user.email! })
+      } else {
+        setAuthUser(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
   return (
     <BrowserRouter>
       <Toaster
@@ -39,9 +68,10 @@ function App() {
             {/* Public */}
             <Route path="/"           element={<Landing />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/auth"       element={<Auth />} />
 
-            {/* App — inside shared Layout */}
-            <Route element={<Layout />}>
+            {/* App — inside shared Layout (protected) */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/resume"    element={<ResumeIntelligence />} />
               <Route path="/market"    element={<MarketIntelligence />} />

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Sparkles, X, CheckCheck, Briefcase, Zap, TrendingUp, Info } from 'lucide-react'
+import { Bell, Sparkles, X, CheckCheck, Briefcase, Zap, TrendingUp, Info, LogOut } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../stores/appStore'
@@ -40,9 +40,11 @@ function timeAgo(iso: string) {
 export function TopBar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, notifications, markNotificationRead, markAllNotificationsRead } = useAppStore()
+  const { profile, notifications, markNotificationRead, markAllNotificationsRead, authUser, signOut } = useAppStore()
   const [showNotifs, setShowNotifs] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   const title = Object.entries(pageTitles).find(([k]) => location.pathname.startsWith(k))?.[1] || 'CareerLens AI'
   const unread = notifications.filter(n => !n.read).length
@@ -56,6 +58,16 @@ export function TopBar() {
     if (showNotifs) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showNotifs])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    if (showUserMenu) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showUserMenu])
 
   const handleNotifClick = (n: Notification) => {
     markNotificationRead(n.id)
@@ -157,9 +169,45 @@ export function TopBar() {
           </AnimatePresence>
         </div>
 
-        {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
-          {profile?.name?.charAt(0) || 'U'}
+        {/* Avatar with dropdown */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setShowUserMenu(v => !v)}
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity"
+          >
+            {profile?.name?.charAt(0) || authUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+          </button>
+
+          <AnimatePresence>
+            {showUserMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-10 w-56 glass rounded-2xl shadow-2xl overflow-hidden"
+                style={{ border: '1px solid rgba(99,102,241,0.2)', zIndex: 100 }}
+              >
+                {/* Email display */}
+                <div className="px-4 py-3 border-b border-white/6">
+                  <p className="text-xs text-slate-500">Signed in as</p>
+                  <p className="text-sm text-white font-medium truncate mt-0.5">{authUser?.email || 'Guest'}</p>
+                </div>
+                {/* Sign out */}
+                <button
+                  onClick={async () => {
+                    setShowUserMenu(false)
+                    await signOut()
+                    navigate('/')
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
+                >
+                  <LogOut size={14} />
+                  Sign out
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

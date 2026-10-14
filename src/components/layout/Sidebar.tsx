@@ -16,7 +16,7 @@ const navItems = [
 ]
 
 export function Sidebar() {
-  const { sidebarCollapsed, setSidebarCollapsed, profile } = useAppStore()
+  const { sidebarCollapsed, setSidebarCollapsed, profile, authUser } = useAppStore()
   const location = useLocation()
 
   return (
@@ -84,13 +84,13 @@ export function Sidebar() {
       <div className="p-3 border-t border-indigo-500/10">
         <div className={cn('flex items-center gap-3 px-2 py-2 rounded-lg', sidebarCollapsed ? 'justify-center' : '')}>
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            {profile?.name?.charAt(0) || 'U'}
+            {profile?.name?.charAt(0) || authUser?.email?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <AnimatePresence>
             {!sidebarCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-w-0">
-                <p className="text-sm font-medium text-white truncate">{profile?.name || 'User'}</p>
-                <p className="text-xs text-slate-500 truncate">{profile?.seniority || 'Entry-level'}</p>
+                <p className="text-sm font-medium text-white truncate">{profile?.name || authUser?.email?.split('@')[0] || 'User'}</p>
+                <p className="text-xs text-slate-500 truncate">{authUser?.email || profile?.seniority || 'Entry-level'}</p>
               </motion.div>
             )}
           </AnimatePresence>

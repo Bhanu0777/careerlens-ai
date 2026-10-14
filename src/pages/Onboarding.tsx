@@ -135,7 +135,12 @@ export default function Onboarding() {
       setHasResume(true, analysis)
       setOnboardingComplete(true)
       runCareerAnalysis()
-      navigate('/dashboard')
+      const { authUser } = useAppStore.getState()
+      if (authUser) {
+        navigate('/dashboard')
+      } else {
+        navigate('/auth')
+      }
     }
   }
 
