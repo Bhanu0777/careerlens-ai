@@ -28,7 +28,7 @@ def _compute_content_hash(title: str, company: str, description: str, requiremen
 
 
 def _row_to_job(r: dict) -> JobItem:
-    """Convert a Supabase jobs row → JobItem with provenance fields."""
+    """Convert a Supabase jobs row â†’ JobItem with provenance fields."""
     from datetime import datetime, timezone
     
     # Human-readable posted date
@@ -357,6 +357,16 @@ async def verify_job(job_id: str):
         raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
 
 
+class CollectSource(BaseModel):
+    url: str
+    name: str = ""
+    params: Optional[Dict[str, Any]] = None
+
+
+class CollectRequest(BaseModel):
+    sources: List[CollectSource]
+
+
 @router.post("/collect")
 async def collect_jobs(
     sources: List[str] = Query(default=["company_careers"]),
@@ -367,9 +377,9 @@ async def collect_jobs(
     Accepts source_urls as query parameter to specify which URLs to scrape.
     """
     from app.services.job_collector import collect_jobs_from_source
-    
+
     logger.info(f"Job collection triggered for sources: {sources}, queries: {queries}")
-    
+
     return {
         "status": "ready",
         "message": "Use POST /jobs/collect/run with a JSON body containing source URLs to start collection.",
@@ -404,13 +414,3 @@ async def run_job_collection(request: CollectRequest):
         "total_updated": sum(r.get("jobs_updated", 0) for r in results),
         "total_failed": sum(r.get("jobs_failed", 0) for r in results),
     }
-
-
-class CollectSource(BaseModel):
-    url: str
-    name: str = ""
-    params: Optional[Dict[str, Any]] = None
-
-
-class CollectRequest(BaseModel):
-    sources: List[CollectSource]
