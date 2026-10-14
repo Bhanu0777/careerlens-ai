@@ -164,7 +164,7 @@ export default function Jobs() {
   const [filterMode, setFilterMode] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
   const [scoreFilter, setScoreFilter] = useState(0)
-  const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified_active' | 'needs_verification' | 'inactive'>('all')
+  const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified_active'>('all')
   const [collecting, setCollecting] = useState(false)
   const [fetchingLive, setFetchingLive] = useState(false)
 
@@ -327,7 +327,7 @@ export default function Jobs() {
             <div>
               <p className="text-xs text-slate-500 mb-2 font-medium">Verification Status</p>
               <div className="flex gap-2 flex-wrap">
-                {['all', 'verified_active', 'needs_verification', 'inactive'].map(m => (
+                {['all', 'verified_active'].map(m => (
                   <button key={m} onClick={() => setVerificationFilter(m as any)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
                       verificationFilter === m

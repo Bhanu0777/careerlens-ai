@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
   TrendingUp, Zap, Briefcase, Flame, Target,
-  Activity, ChevronRight, CheckCircle2, FileText, BarChart3
+  Activity, ChevronRight, CheckCircle2, FileText, BarChart3, Loader2
 } from 'lucide-react'
 import { Card, CardTitle } from '../components/ui/Card'
 import { ScoreRing, ProgressBar } from '../components/ui/ScoreRing'
@@ -27,6 +27,7 @@ export default function Dashboard() {
     profile, gaps, targetRoles, jobs, marketSkills,
     resumeAnalysis, fetchLiveJobs, fetchLiveMarket, runCareerAnalysis
   } = useAppStore()
+  const [loading, setLoading] = useState(true)
 
   // Fetch live data when dashboard mounts, then run career analysis
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function Dashboard() {
           })
           .catch(() => { /* silent background fetch — ignore errors */ })
       }
+      setLoading(false)
     })
   }, [resumeAnalysis])
 
@@ -76,6 +78,12 @@ export default function Dashboard() {
 
   // Top skill gap for the alert
   const topGap = gaps[0]
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+    </div>
+  )
 
   return (
     <motion.div className="p-4 md:p-6 space-y-6 max-w-7xl"

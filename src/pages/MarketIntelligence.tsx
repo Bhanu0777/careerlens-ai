@@ -29,7 +29,6 @@ export default function MarketIntelligence() {
   const navigate = useNavigate()
   const [skills, setSkills] = useState<MarketSkillRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [jobCount, setJobCount] = useState<string | null>(null)
   const [dataSource, setDataSource] = useState<string | null>(null)
   const [dataFreshness, setDataFreshness] = useState<string | null>(null)
   const [selectedSkillSources, setSelectedSkillSources] = useState<MarketStatisticRow[]>([])
@@ -38,9 +37,6 @@ export default function MarketIntelligence() {
     async function loadData() {
       const rows = await fetchMarketSkillsFromDB()
       setSkills(rows)
-      const total = rows.reduce((sum, r) => sum + r.job_count, 0)
-      if (total > 0) setJobCount(total.toLocaleString())
-      else setJobCount(null)
       setLoading(false)
       
       if (rows.length > 0) {
@@ -78,15 +74,15 @@ export default function MarketIntelligence() {
         <div>
           <h1 className="font-display text-2xl font-bold text-white mb-1">Market Intelligence</h1>
           <p className="text-slate-400 text-sm">
-            {jobCount
-              ? <>Based on <strong className="text-indigo-300">{jobCount} analyzed job postings</strong></>
+            {skills.length > 0
+              ? `Tracking demand for ${skills.length} skills across the India tech market`
               : 'No market data available — job collection has not been run yet.'}
           </p>
           {dataFreshness && (
             <p className="text-slate-500 text-xs mt-1">{dataFreshness}</p>
           )}
         </div>
-        {jobCount && dataSource && (
+        {dataSource && (
           <Badge variant="cyan" size="sm">
             <Database size={10} /> Source: {dataSource}
           </Badge>
@@ -114,7 +110,7 @@ export default function MarketIntelligence() {
           {/* Chart */}
           <Card className="p-5">
             <div className="flex items-center justify-between mb-5">
-              <CardTitle>Skill Demand — {skills.length} skills from {jobCount || '—'} postings</CardTitle>
+              <CardTitle>Skill Demand — {skills.length} skills tracked</CardTitle>
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Info size={12} />
                 <span>Click a skill to see source details</span>
