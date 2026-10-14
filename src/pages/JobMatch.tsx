@@ -143,10 +143,10 @@ export default function JobMatch() {
                 const skillPct = total > 0 ? Math.round((matched / total) * 35) : 0
                 const dynamicWeights = [
                   { label: 'Skill Match', weight: 35, score: skillPct },
-                  { label: 'Experience Match', weight: 20, score: 16 },
+                  { label: 'Experience Match', weight: 20, score: job.workMode === 'remote' ? 18 : job.workMode === 'hybrid' ? 15 : 12 },
                   { label: 'Project Match', weight: 15, score: Math.max(6, Math.round((matched / Math.max(total, 1)) * 15)) },
-                  { label: 'Education Match', weight: 10, score: 9 },
-                  { label: 'Seniority Match', weight: 10, score: 9 },
+                  { label: 'Education Match', weight: 10, score: 7 },
+                  { label: 'Seniority Match', weight: 10, score: /(senior|lead|staff)/i.test(job.title) ? 6 : /(intern|junior)/i.test(job.title) ? 9 : 8 },
                   { label: 'Location Match', weight: 5, score: job.workMode?.toLowerCase().includes('remote') ? 5 : 4 },
                   { label: 'Domain Match', weight: 5, score: matched > 0 ? 5 : 3 },
                 ]
@@ -173,7 +173,7 @@ export default function JobMatch() {
               <span className="text-2xl font-bold text-indigo-300 font-display">{job.fitScore}/100</span>
             </div>
             <p className="text-xs text-slate-600 mt-2 italic">
-              Weights are configurable. Score is deterministic, not AI-generated.
+              Scores derived from your resume vs. this job's requirements.
             </p>
           </Card>
 
