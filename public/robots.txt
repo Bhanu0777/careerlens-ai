@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /resume
+Disallow: /jobs
+Disallow: /skill-gap
+Disallow: /market
